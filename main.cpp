@@ -2,6 +2,9 @@
 #include<string>
 #include<deque>
 #include <vector>
+#include <chrono>
+#include <thread>
+#include <unistd.h>
 #include<conio.h> // for getting user input, only works on windows
 using namespace std;
 
@@ -107,6 +110,8 @@ void Game :: input(){
         if(current == 's')  player->y++;
         if(current == 'q')  {
           quit = true;
+          // sleep(3);
+          
           gameQuit("manual");
         }
   }
