@@ -2,9 +2,8 @@
 #include<string>
 #include<deque>
 #include <vector>
-#include <chrono>
-#include <thread>
 #include <unistd.h>
+#include <time.h>
 #include<conio.h> // for getting user input, only works on windows
 using namespace std;
 
@@ -22,35 +21,46 @@ class Player{
 class Lane{
     // blocks will be boolean, true means player can pass through the block, false is the oposite
     deque<bool> cars;
+    bool right;
 
-    public:
-      Lane(int width){
-        // adding blocks to the deque through constructor
-        for (int i = 0; i < width; i++)
-        {
-          // initializing no cars on the road
-          cars.push_front(true);
-        }
+  public:
+    Lane(int width)
+    {
+      // adding blocks to the deque through constructor
+      for (int i = 0; i < width; i++)
+      {
+        // initializing no cars on the road
+        cars.push_front(true);
+
+        right = rand() % 2;
+      }
         
       }
 
       void moveCars(){
         // randomly pushing blocks on the road
-        cars.push_front(rand() % 10 == 1);
-        
-        cars.pop_back();
+        if(right){
+          cars.push_front(rand() % 10 == 1);
+          cars.pop_back();
+        }else{
+          cars.push_back(rand() % 10 == 1);
+          cars.pop_front();
+        }
       }
 
       bool checkPos(int pos){
         // getting car from specific position
         return cars[pos];
       }
+
+      void changeDir() { right = !right; }
 };
 
 class Game{
   bool quit;
   int numOfLanes;
-  int width, scoore;
+  int width;
+  int score = 0;
   Player* player;
   vector<Lane*> map;
   
@@ -66,6 +76,16 @@ class Game{
         player = new Player(width);
     }
 
+// free the memory
+    ~Game(){
+        delete player;
+        for (int i = 0; i < map.size(); i++){
+          Lane* current = map.back();
+          map.pop_back();
+          delete current;
+        }
+    }
+
     void draw();
     void input();
     void logic();
@@ -75,8 +95,12 @@ class Game{
 
 int main(){
 
+    srand(time(NULL));
+
     Game _game(30, 5);
     _game.run();
+
+    // _game.gameQuit("manual");
 
     getchar();
     return 0;
@@ -87,18 +111,19 @@ void Game :: draw(){
 
   for (int i = 0; i < numOfLanes; i++){
         for (int j = 0; j < width; j++){
-          if(map[i] -> checkPos(j) && i != 0 && i != numOfLanes -1){
-            // not printing first and last length
-            cout << "#";
-          }else if(player -> x == j && player -> y == i){
-            cout << "V";
-          }else{
-            cout << " ";
-          }
+
+          if(i == 0 && (j ==0 || j == width -1)) cout << "$";
+          if(i == numOfLanes - 1 && (j ==0 || j == width -1))cout << "$";
+
+    
+          if(map[i] -> checkPos(j) && i != 0 && i != numOfLanes -1)  cout << "#";
+          else if(player -> x == j && player -> y == i)cout << "V";
+          else cout << " ";
         }
 
         cout << endl;
   }
+  cout << "your score is " << score << endl;
 }
 
 void Game :: input(){
@@ -127,6 +152,12 @@ void Game :: logic(){
         quit = true;
         gameQuit("gameOver");
     }
+    if(player -> y == numOfLanes -1){
+        score++;
+        player->y = 0;
+        cout << "\x07"; // score sound
+        map[rand() % numOfLanes]->changeDir();
+    } 
         
   }
 }
@@ -155,16 +186,17 @@ void Game:: gameQuit(string type){
   if(type == "manual"){
       cout << "You Quit the game" << endl;
   }
+  cout << "your score is " << score << endl;
   cout << "Do you want to restart?" << endl;
   cout << "Type r and hit enter to restart" << endl;
   cout << "Type e and hit enter to exit" << endl;
   if(_kbhit()){
-        char current = _getch();
-        if(current == 'r') {
+        char input = _getch();
+        if(input == 'r') {
           quit = false;
           run();
         }
-        if(current == 'e') {
+        if(input == 'e') {
           exit(0);
         }
   }
